@@ -68,14 +68,25 @@ def _clean_1004_errors(raw):
 class EpicGamesStoreAPI:
     """Class for interacting with EGS web API without user credentials TODO?."""
 
-    def __init__(self, locale="en-US", country="US", session=None) -> None:
+    def __init__(
+        self,
+        locale="en-US",
+        country="US",
+        session=None,
+        hash_endpoint=None,
+    ) -> None:
         """:param locale: EGS locale (this parameter depends on responses locale)
         :param country: EGS country
+        :param session: Custom session object (cloudscraper session by default)
+        :param hash_endpoint: Endpoint URL for fetching sha256Hash by operationName
         """
         self._session = session or cloudscraper.create_scraper()
         self._graphql_url = "https://store.epicgames.com/graphql"
         self.locale = locale
         self.country = country
+        self._hash_endpoint = hash_endpoint
+        # Cache for sha256Hash values: {operationName: sha256Hash}
+        self._hash_cache: dict[str, str] = {}
 
     def get_product_mapping(self) -> dict:
         """Returns product mapping in {namespace: slug} format."""
@@ -459,6 +470,142 @@ class EpicGamesStoreAPI:
         if not suppress_errors:
             self._get_errors(response)
         return response
+
+    def _get_sha256_hash(self, operation_name: str) -> str:
+        """Get sha256Hash for a given operationName.
+        
+        :param operation_name: The GraphQL operation name (e.g., 'getStoreConfig')
+        :return: sha256Hash string
+        :raises: EGSException if hash cannot be retrieved
+        """
+        # Check cache first
+        if operation_name in self._hash_cache:
+            return self._hash_cache[operation_name]
+        
+        # Try to fetch from configured endpoint
+        if self._hash_endpoint:
+            try:
+                response = self._session.get(
+                    self._hash_endpoint,
+                    params={'operationName': operation_name},
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    # Expected format: {"sha256Hash": "..."} or {"hash": "..."}
+                    sha256_hash = data.get('sha256Hash') or data.get('hash')
+                    if sha256_hash:
+                        self._hash_cache[operation_name] = sha256_hash
+                        return sha256_hash
+            except Exception:
+                # If endpoint fails, fall back to default hash
+                pass
+        
+        # Fallback to known hashes (can be expanded)
+        known_hashes = {
+            'getStoreConfig': 'f51a14bfd8e8969386e70f7c734c2671d9f61833021174e44723ddda9881739e',
+        }
+        
+        if operation_name in known_hashes:
+            hash_value = known_hashes[operation_name]
+            self._hash_cache[operation_name] = hash_value
+            return hash_value
+        
+        msg = (
+            f'Cannot retrieve sha256Hash for operation "{operation_name}". '
+            f'Please configure hash_endpoint or use a known operation name.'
+        )
+        raise EGSException(msg)
+
+    def _make_persisted_graphql_query(
+        self,
+        operation_name: str,
+        variables: dict | None = None,
+        headers: dict | None = None,
+        suppress_errors: bool = False,
+    ) -> dict:
+        """Make a GraphQL query using persisted query format.
+        
+        :param operation_name: The GraphQL operation name
+        :param variables: Query variables
+        :param headers: Additional HTTP headers
+        :param suppress_errors: Whether to suppress error checking
+        :return: Response dictionary
+        """
+        if headers is None:
+            headers = {}
+        if variables is None:
+            variables = {}
+        
+        # Get sha256Hash for the operation
+        sha256_hash = self._get_sha256_hash(operation_name)
+        
+        # Prepare persisted query request
+        # Format: GET /graphql?operationName=...&variables=...&extensions=...
+        
+        # Add default variables
+        query_variables = {
+            'locale': self.locale,
+            'country': self.country,
+            **variables,
+        }
+        
+        # Build extensions for persisted query
+        extensions = {
+            'persistedQuery': {
+                'version': 1,
+                'sha256Hash': sha256_hash,
+            },
+        }
+        
+        # Build query parameters
+        params = {
+            'operationName': operation_name,
+            'variables': json.dumps(query_variables),
+            'extensions': json.dumps(extensions),
+        }
+        
+        # Make GET request (persisted queries typically use GET)
+        response = self._session.get(
+            self._graphql_url,
+            params=params,
+            headers=headers,
+        )
+        
+        if response.status_code != 200:
+            msg = f'GraphQL query failed with status code {response.status_code}'
+            raise EGSException(msg)
+        
+        data = response.json()
+        
+        if not suppress_errors:
+            self._get_errors(data)
+        
+        return data
+
+    def get_store_config(self, sandbox_id: str) -> dict:
+        """Get store configuration for a product by sandbox ID.
+        
+        :param sandbox_id: The product sandbox ID
+        :return: Store configuration data dictionary
+        
+        Example response structure:
+        {
+            "data": {
+                "Product": {
+                    "sandbox": {
+                        "configuration": [...]
+                    }
+                }
+            }
+        }
+        """
+        variables = {
+            'sandboxId': sandbox_id,
+        }
+        return self._make_persisted_graphql_query(
+            operation_name='getStoreConfig',
+            variables=variables,
+        )
 
     @staticmethod
     def _get_errors(resp) -> None:
