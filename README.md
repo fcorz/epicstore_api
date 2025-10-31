@@ -7,6 +7,16 @@
 An unofficial library to work with Epic Games Store Web API.
 **The library works with `cloudscraper` under the hood to battle the anti-bot protections, please be careful with the amount of requests you do, as this is not a silver bullet.**
 
+## About This Fork
+
+This is a customized fork of the original `epicstore_api` library with additional features and improvements:
+
+- Added `get_store_config()` method to retrieve store configuration for products by sandbox ID
+- Implemented support for persisted GraphQL queries with hash caching mechanism
+- Added configurable hash endpoint for fetching GraphQL operation hashes
+- Enhanced performance with caching for sha256Hash values
+- Improved error handling and flexibility for API interactions
+
 ## Installing
 
 **Python 3.6 or higher is required**
@@ -43,6 +53,20 @@ for offer_data in offers_data:
     print('Offer ID:', data['id'], '\nDeveloper Name:', developer_name)
 ```
 
+### New Feature: Get Store Configuration
+
+```python
+from epicstore_api import EpicGamesStoreAPI
+
+# Initialize API
+api = EpicGamesStoreAPI(locale="zh-CN")
+
+# Get store configuration for a product by sandbox ID
+sandbox_id = "b4bb52a95d0b43d9af543c6ec3c54e04"  # Example sandbox ID
+config = api.get_store_config(sandbox_id)
+print(config)
+```
+
 You can find more examples in the examples directory.
 
 ### Contributing
@@ -50,3 +74,6 @@ Feel free to contribute by creating PRs and sending your issues
 
 ## Links
 * [Documentation](https://epicstore-api.readthedocs.io/en/latest/)
+
+## License
+MIT
