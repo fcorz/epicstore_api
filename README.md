@@ -1,8 +1,8 @@
-# epicstore_api
+# epicstore_api_additions
 
-[![Current pypi version](https://img.shields.io/pypi/v/epicstore-api.svg)](https://pypi.org/project/epicstore-api/)
-[![Supported py versions](https://img.shields.io/pypi/pyversions/epicstore-api.svg)](https://pypi.org/project/epicstore-api/)
-[![Downloads](https://pepy.tech/badge/epicstore-api)](https://pypi.org/project/epicstore-api/)
+[![Current pypi version](https://img.shields.io/pypi/v/epicstore-api-additions.svg)](https://pypi.org/project/epicstore-api-additions/)
+[![Supported py versions](https://img.shields.io/pypi/pyversions/epicstore-api-additions.svg)](https://pypi.org/project/epicstore-api-additions/)
+[![Downloads](https://pepy.tech/badge/epicstore-api-additions)](https://pypi.org/project/epicstore-api-additions/)
 
 An unofficial library to work with Epic Games Store Web API.
 **The library works with `cloudscraper` under the hood to battle the anti-bot protections, please be careful with the amount of requests you do, as this is not a silver bullet.**
@@ -12,6 +12,8 @@ An unofficial library to work with Epic Games Store Web API.
 This is a customized fork of the original `epicstore_api` library with additional features and improvements:
 
 - Added `get_store_config()` method to retrieve store configuration for products by sandbox ID
+- Added `get_product_by_id()` method to retrieve product details by product ID
+- Added `get_product_offer_by_id()` method to retrieve offer details by product ID and offer ID
 - Implemented support for persisted GraphQL queries with hash caching mechanism
 - Added configurable hash endpoint for fetching GraphQL operation hashes
 - Enhanced performance with caching for sha256Hash values
@@ -19,16 +21,16 @@ This is a customized fork of the original `epicstore_api` library with additiona
 
 ## Installing
 
-**Python 3.6 or higher is required**
+**Python 3.7 or higher is required**
 
 To install the library you can just run the following command:
 
 ``` sh
 # Linux/macOS
-python3 -m pip install -U epicstore_api
+python3 -m pip install -U epicstore_api_additions
 
 # Windows
-py -3 -m pip install -U epicstore_api
+py -3 -m pip install -U epicstore_api_additions
 ```
 
 
@@ -65,6 +67,35 @@ api = EpicGamesStoreAPI(locale="zh-CN")
 sandbox_id = "b4bb52a95d0b43d9af543c6ec3c54e04"  # Example sandbox ID
 config = api.get_store_config(sandbox_id)
 print(config)
+```
+
+### New Feature: Get Product by ID
+
+```python
+from epicstore_api import EpicGamesStoreAPI
+
+# Initialize API
+api = EpicGamesStoreAPI(locale="zh-CN", country="TW")
+
+# Get product details by product ID
+product_id = "3ac65ef5cdf44b8084fcac818002635f"  # Example product ID
+product = api.get_product_by_id(product_id)
+print(product)
+```
+
+### New Feature: Get Product Offer by ID
+
+```python
+from epicstore_api import EpicGamesStoreAPI
+
+# Initialize API
+api = EpicGamesStoreAPI(locale="zh-CN", country="TW")
+
+# Get offer details by product ID and offer ID
+product_id = "3ac65ef5cdf44b8084fcac818002635f"  # Example product ID
+offer_id = "cb49140c3c11429589ab22fd75c41504"  # Example offer ID
+offer = api.get_product_offer_by_id(product_id, offer_id)
+print(offer)
 ```
 
 You can find more examples in the examples directory.

@@ -103,6 +103,49 @@ class EpicGamesStoreAPI:
             use_locale=True,
         )
 
+    def get_product_by_id(self, product_id: str) -> dict:
+        """Returns a product's data by product ID.
+
+        :param product_id: Product's ID.
+        """
+        api_uri = (
+            f'https://egs-platform-service.store.epicgames.com/api/v1/egs/products/{product_id}'
+        )
+        params = {
+            'country': self.country,
+            'locale': self.locale,
+            'store': 'EGS',
+        }
+        response = self._session.get(api_uri, params=params)
+        if response.status_code == 404:
+            msg = f'Product with ID {product_id} was not found'
+            raise EGSNotFound(msg)
+        data = response.json()
+        self._get_errors(data)
+        return data
+
+    def get_product_offer_by_id(self, product_id: str, offer_id: str) -> dict:
+        """Returns an offer's data by product ID and offer ID.
+
+        :param product_id: Product's ID.
+        :param offer_id: Offer's ID.
+        """
+        api_uri = (
+            f'https://egs-platform-service.store.epicgames.com/api/v1/egs/products/{product_id}/offers/{offer_id}'
+        )
+        params = {
+            'country': self.country,
+            'locale': self.locale,
+            'store': 'EGS',
+        }
+        response = self._session.get(api_uri, params=params)
+        if response.status_code == 404:
+            msg = f'Offer with product ID {product_id} and offer ID {offer_id} was not found'
+            raise EGSNotFound(msg)
+        data = response.json()
+        self._get_errors(data)
+        return data
+
     def get_store(self) -> dict:
         """Returns a JSON data about store page."""
         return self._make_api_query('/content/store', method='GET', use_locale=True)

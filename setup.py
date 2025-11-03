@@ -2,23 +2,23 @@ from pathlib import Path
 
 import setuptools
 
-AUTHOR = 'SD4RK'
+AUTHOR = 'fcorz'
 VERSION = '0.2.1'
 
 long_description = Path("README.md").read_text()
 
 setuptools.setup(
-    name='epicstore_api_fcorz',
+    name='epicstore_api_additions',
     version=VERSION,
     author=AUTHOR,
-    description='An API wrapper for Epic Games Store written in Python',
+    description='An API wrapper for Epic Games Store with additional features (fork of epicstore_api)',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/fcorz/epicstore_api',
+    url='https://github.com/fcorz/epicstore_api_additions',
     license='MIT',
     include_package_data=True,
     install_requires=['cloudscraper>=1.2.71'],
-    download_url=f'https://github.com/fcorz/epicstore_api/archive/v_{VERSION}.tar.gz',
+    download_url=f'https://github.com/fcorz/epicstore_api_additions/archive/v_{VERSION}.tar.gz',
     packages=setuptools.find_packages(),
     classifiers=[
         'License :: OSI Approved :: MIT License',
