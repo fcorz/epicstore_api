@@ -103,6 +103,26 @@ class EpicGamesStoreAPI:
             use_locale=True,
         )
 
+    def get_product_ipv4(self, slug: str) -> dict:
+        """Returns a product's data by slug using IPv4 endpoint.
+
+        This method uses the IPv4-specific endpoint which may return
+        different or more detailed product information.
+
+        :param slug: Product's slug.
+        :return: Product data dictionary with pages, namespace, and other details.
+        """
+        base_url = 'https://store-content-ipv4.ak.epicgames.com'
+        base_url += f'/api/{self.locale}'
+        endpoint = f'/content/products/{slug}'
+        response = self._session.get(base_url + endpoint)
+        if response.status_code == 404:
+            msg = f'Product with slug {slug} was not found'
+            raise EGSNotFound(msg)
+        data = response.json()
+        self._get_errors(data)
+        return data
+
     def get_product_by_id(self, product_id: str) -> dict:
         """Returns a product's data by product ID.
 
@@ -519,7 +539,7 @@ class EpicGamesStoreAPI:
         
         :param operation_name: The GraphQL operation name (e.g., 'getStoreConfig')
         :return: sha256Hash string
-        :raises: EGSException if hash cannot be retrieved
+        :raises: EGSException if hash cannot be retrieved and hash_endpoint is not configured
         """
         # Check cache first
         if operation_name in self._hash_cache:
@@ -539,23 +559,18 @@ class EpicGamesStoreAPI:
                     if sha256_hash:
                         self._hash_cache[operation_name] = sha256_hash
                         return sha256_hash
-            except Exception:
-                # If endpoint fails, fall back to default hash
-                pass
+            except Exception as e:
+                # If endpoint fails, raise exception
+                msg = (
+                    f'Failed to retrieve sha256Hash for operation "{operation_name}" '
+                    f'from hash_endpoint: {e}'
+                )
+                raise EGSException(msg)
         
-        # Fallback to known hashes (can be expanded)
-        known_hashes = {
-            'getStoreConfig': 'f51a14bfd8e8969386e70f7c734c2671d9f61833021174e44723ddda9881739e',
-        }
-        
-        if operation_name in known_hashes:
-            hash_value = known_hashes[operation_name]
-            self._hash_cache[operation_name] = hash_value
-            return hash_value
-        
+        # No hash_endpoint configured and not in cache
         msg = (
             f'Cannot retrieve sha256Hash for operation "{operation_name}". '
-            f'Please configure hash_endpoint or use a known operation name.'
+            f'Please provide sha256_hash parameter or configure hash_endpoint.'
         )
         raise EGSException(msg)
 
@@ -565,6 +580,7 @@ class EpicGamesStoreAPI:
         variables: dict | None = None,
         headers: dict | None = None,
         suppress_errors: bool = False,
+        sha256_hash: str | None = None,
     ) -> dict:
         """Make a GraphQL query using persisted query format.
         
@@ -572,6 +588,9 @@ class EpicGamesStoreAPI:
         :param variables: Query variables
         :param headers: Additional HTTP headers
         :param suppress_errors: Whether to suppress error checking
+        :param sha256_hash: Optional sha256Hash value. If provided, will be used
+                           directly instead of looking it up. If None, will try
+                           to get it from cache/endpoint/known hashes.
         :return: Response dictionary
         """
         if headers is None:
@@ -580,7 +599,9 @@ class EpicGamesStoreAPI:
             variables = {}
         
         # Get sha256Hash for the operation
-        sha256_hash = self._get_sha256_hash(operation_name)
+        # Use provided hash if available, otherwise try to get it
+        if sha256_hash is None:
+            sha256_hash = self._get_sha256_hash(operation_name)
         
         # Prepare persisted query request
         # Format: GET /graphql?operationName=...&variables=...&extensions=...
@@ -625,11 +646,19 @@ class EpicGamesStoreAPI:
         
         return data
 
-    def get_store_config(self, sandbox_id: str) -> dict:
+    def get_store_config(
+        self,
+        sandbox_id: str,
+        sha256_hash: str | None = None,
+    ) -> dict:
         """Get store configuration for a product by sandbox ID.
         
         :param sandbox_id: The product sandbox ID
+        :param sha256_hash: Optional sha256Hash value for the persisted query.
+                           If None, will try to get it from cache/endpoint.
+                           If hash_endpoint is not configured, this parameter is required.
         :return: Store configuration data dictionary
+        :raises: EGSException if sha256_hash is not provided and hash_endpoint is not configured
         
         Example response structure:
         {
@@ -645,9 +674,58 @@ class EpicGamesStoreAPI:
         variables = {
             'sandboxId': sandbox_id,
         }
+        
+        # If hash not provided, try to get from cache/endpoint
+        if sha256_hash is None:
+            sha256_hash = self._get_sha256_hash('getStoreConfig')
+        
         return self._make_persisted_graphql_query(
             operation_name='getStoreConfig',
             variables=variables,
+            sha256_hash=sha256_hash,
+        )
+
+    def get_catalog_offer(
+        self,
+        offer_id: str,
+        sandbox_id: str,
+        sha256_hash: str | None = None,
+    ) -> dict:
+        """Get catalog offer details by offer ID and sandbox ID.
+        
+        This method uses the persisted GraphQL query format with the
+        'getCatalogOffer' operation. The sha256Hash must be provided
+        at call time, or retrieved from cache/endpoint if hash_endpoint is configured.
+        
+        :param offer_id: The offer ID
+        :param sandbox_id: The product sandbox ID
+        :param sha256_hash: Optional sha256Hash value for the persisted query.
+                           If None, will try to get it from cache/endpoint.
+                           If hash_endpoint is not configured, this parameter is required.
+        :return: Catalog offer data dictionary
+        :raises: EGSException if sha256_hash is not provided and hash_endpoint is not configured
+        
+        Example:
+            api = EpicGamesStoreAPI(locale="zh-CN", country="TW")
+            offer = api.get_catalog_offer(
+                offer_id="f506d29d55bb4c72b8d57fd9857b2be4",
+                sandbox_id="94cec4802e954a6c9579e29e8b817f3a",
+                sha256_hash="abafd6e0aa80535c43676f533f0283c7f5214a59e9fae6ebfb37bed1b1bb2e9b"
+            )
+        """
+        variables = {
+            'offerId': offer_id,
+            'sandboxId': sandbox_id,
+        }
+        
+        # If hash not provided, try to get from cache/endpoint
+        if sha256_hash is None:
+            sha256_hash = self._get_sha256_hash('getCatalogOffer')
+        
+        return self._make_persisted_graphql_query(
+            operation_name='getCatalogOffer',
+            variables=variables,
+            sha256_hash=sha256_hash,
         )
 
     @staticmethod
