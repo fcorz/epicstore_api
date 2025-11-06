@@ -653,12 +653,25 @@ class EpicGamesStoreAPI:
     ) -> dict:
         """Get store configuration for a product by sandbox ID.
         
+        This method can retrieve various product information including:
+        - Supported languages (支持语言)
+        - Hardware requirements (硬件要求)
+        - Tags (标签)
+        - Developer information (开发商信息)
+        
         :param sandbox_id: The product sandbox ID
         :param sha256_hash: Optional sha256Hash value for the persisted query.
                            If None, will try to get it from cache/endpoint.
                            If hash_endpoint is not configured, this parameter is required.
         :return: Store configuration data dictionary
         :raises: EGSException if sha256_hash is not provided and hash_endpoint is not configured
+        
+        Example:
+            api = EpicGamesStoreAPI(locale="zh-Hant")
+            config = api.get_store_config(
+                sandbox_id="13b88612e6e14cfb80a1de47948fc2a9",
+                sha256_hash="f51a14bfd8e8969386e70f7c734c2671d9f61833021174e44723ddda9881739e"
+            )
         
         Example response structure:
         {
@@ -697,12 +710,15 @@ class EpicGamesStoreAPI:
         'getCatalogOffer' operation. The sha256Hash must be provided
         at call time, or retrieved from cache/endpoint if hash_endpoint is configured.
         
+        Note: This method returns the short description (短描述) of the product.
+        For long description (长描述) content, please use other methods.
+        
         :param offer_id: The offer ID
         :param sandbox_id: The product sandbox ID
         :param sha256_hash: Optional sha256Hash value for the persisted query.
                            If None, will try to get it from cache/endpoint.
                            If hash_endpoint is not configured, this parameter is required.
-        :return: Catalog offer data dictionary
+        :return: Catalog offer data dictionary containing short description and other offer details
         :raises: EGSException if sha256_hash is not provided and hash_endpoint is not configured
         
         Example:
@@ -712,6 +728,7 @@ class EpicGamesStoreAPI:
                 sandbox_id="94cec4802e954a6c9579e29e8b817f3a",
                 sha256_hash="abafd6e0aa80535c43676f533f0283c7f5214a59e9fae6ebfb37bed1b1bb2e9b"
             )
+            # Access short description: offer['data']['Catalog']['catalogOffer']['description']
         """
         variables = {
             'offerId': offer_id,

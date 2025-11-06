@@ -1,4 +1,11 @@
-"""Example: Get store configuration for a product."""
+"""Example: Get store configuration for a product.
+
+This method can retrieve:
+- Supported languages (支持语言)
+- Hardware requirements (硬件要求)
+- Tags (标签)
+- Developer information (开发商信息)
+"""
 
 import json
 
@@ -9,11 +16,11 @@ def main() -> None:
     """Print store configuration for a product."""
     # Initialize API (you can optionally configure hash_endpoint)
     # api = EpicGamesStoreAPI(locale="zh-CN", hash_endpoint="https://your-hash-service.com/api/hash")
-    api = EpicGamesStoreAPI(locale="zh-CN")
+    api = EpicGamesStoreAPI(locale="zh-Hant")
     
-    # Example sandbox ID from the requirement document
+    # Example sandbox ID (from the URL example)
     # 通常是游戏的 namespace 或者 offer_id 对应的值
-    sandbox_id = "b4bb52a95d0b43d9af543c6ec3c54e04"
+    sandbox_id = "13b88612e6e14cfb80a1de47948fc2a9"
     
     # Option 1: Provide sha256Hash explicitly
     sha256_hash = "f51a14bfd8e8969386e70f7c734c2671d9f61833021174e44723ddda9881739e"

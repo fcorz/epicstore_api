@@ -1,4 +1,8 @@
-"""Example: Get catalog offer details."""
+"""Example: Get catalog offer details.
+
+Note: This method returns the short description (短描述) of the product.
+For long description (长描述) content, please use other methods.
+"""
 
 import json
 

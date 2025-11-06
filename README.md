@@ -61,21 +61,27 @@ for offer_data in offers_data:
 
 ### New Feature: Get Store Configuration
 
+This method can retrieve various product information including:
+- Supported languages (支持语言)
+- Hardware requirements (硬件要求)
+- Tags (标签)
+- Developer information (开发商信息)
+
 ```python
 from epicstore_api import EpicGamesStoreAPI
 
 # Initialize API
-api = EpicGamesStoreAPI(locale="zh-CN")
+api = EpicGamesStoreAPI(locale="zh-Hant")
 
 # Get store configuration for a product by sandbox ID
 # Option 1: Provide sha256Hash explicitly
-sandbox_id = "b4bb52a95d0b43d9af543c6ec3c54e04"  # Example sandbox ID
+sandbox_id = "13b88612e6e14cfb80a1de47948fc2a9"  # Example sandbox ID
 sha256_hash = "f51a14bfd8e8969386e70f7c734c2671d9f61833021174e44723ddda9881739e"
 config = api.get_store_config(sandbox_id, sha256_hash=sha256_hash)
 print(config)
 
 # Option 2: Configure hash_endpoint to fetch hash automatically
-# api = EpicGamesStoreAPI(locale="zh-CN", hash_endpoint="https://your-hash-service.com/api/hash")
+# api = EpicGamesStoreAPI(locale="zh-Hant", hash_endpoint="https://your-hash-service.com/api/hash")
 # config = api.get_store_config(sandbox_id)  # Will fetch hash from endpoint
 ```
 
@@ -125,6 +131,9 @@ print(product)
 
 ### New Feature: Get Catalog Offer
 
+**Note:** This method returns the short description (短描述) of the product.
+For long description (长描述) content, please use other methods.
+
 ```python
 from epicstore_api import EpicGamesStoreAPI
 
@@ -138,8 +147,9 @@ offer = api.get_catalog_offer(
     sandbox_id="94cec4802e954a6c9579e29e8b817f3a",
     sha256_hash="abafd6e0aa80535c43676f533f0283c7f5214a59e9fae6ebfb37bed1b1bb2e9b"
 )
+# Access short description: offer['data']['Catalog']['catalogOffer']['description']
 
-# Option 2: Let the method use default hash (will try cache/endpoint first)
+# Option 2: Let the method get hash from cache/endpoint (if configured)
 offer = api.get_catalog_offer(
     offer_id="f506d29d55bb4c72b8d57fd9857b2be4",
     sandbox_id="94cec4802e954a6c9579e29e8b817f3a"
