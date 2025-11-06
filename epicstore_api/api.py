@@ -166,6 +166,47 @@ class EpicGamesStoreAPI:
         self._get_errors(data)
         return data
 
+    def get_product_critic_reviews(
+        self,
+        product_id: str,
+        count: int = 3,
+        start: int = 0,
+    ) -> dict:
+        """Get critic reviews (OpenCritic) for a product by product ID.
+
+        This method retrieves critic review scores from OpenCritic for a given product.
+
+        :param product_id: The product ID (e.g., "eea910a7cb414468a2b6eef5a33d0b71")
+        :param count: Number of reviews to retrieve. Default is 3.
+        :param start: Starting index for pagination. Default is 0.
+        :return: Critic reviews data dictionary containing review scores and information
+        :raises: EGSNotFound if product with the given ID was not found
+
+        Example:
+            api = EpicGamesStoreAPI(locale="zh-Hant")
+            reviews = api.get_product_critic_reviews(
+                product_id="eea910a7cb414468a2b6eef5a33d0b71",
+                count=3,
+                start=0
+            )
+        """
+        api_uri = (
+            f'https://egs-platform-service.store.epicgames.com/api/v1/egs/products/{product_id}/critic-reviews/open-critic'
+        )
+        params = {
+            'count': count,
+            'locale': self.locale,
+            'start': start,
+            'store': 'EGS',
+        }
+        response = self._session.get(api_uri, params=params)
+        if response.status_code == 404:
+            msg = f'Product with ID {product_id} was not found'
+            raise EGSNotFound(msg)
+        data = response.json()
+        self._get_errors(data)
+        return data
+
     def get_store(self) -> dict:
         """Returns a JSON data about store page."""
         return self._make_api_query('/content/store', method='GET', use_locale=True)

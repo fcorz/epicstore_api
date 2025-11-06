@@ -14,6 +14,7 @@ This is a customized fork of the original `epicstore_api` library with additiona
 - Added `get_store_config()` method to retrieve store configuration for products by sandbox ID
 - Added `get_product_by_id()` method to retrieve product details by product ID
 - Added `get_product_offer_by_id()` method to retrieve offer details by product ID and offer ID
+- Added `get_product_critic_reviews()` method to retrieve critic reviews (OpenCritic) scores by product ID
 - Added `get_product_ipv4()` method to retrieve product details using IPv4 endpoint
 - Added `get_catalog_offer()` method to retrieve catalog offer details with flexible sha256Hash support
 - Added `get_video_by_id()` method to retrieve video information and mediaRefId by video ID
@@ -113,6 +114,26 @@ product_id = "3ac65ef5cdf44b8084fcac818002635f"  # Example product ID
 offer_id = "cb49140c3c11429589ab22fd75c41504"  # Example offer ID
 offer = api.get_product_offer_by_id(product_id, offer_id)
 print(offer)
+```
+
+### New Feature: Get Product Critic Reviews
+
+Get critic reviews (OpenCritic) scores for a product by product ID.
+
+```python
+from epicstore_api import EpicGamesStoreAPI
+
+# Initialize API
+api = EpicGamesStoreAPI(locale="zh-Hant")
+
+# Get critic reviews for a product
+product_id = "eea910a7cb414468a2b6eef5a33d0b71"  # Example product ID
+reviews = api.get_product_critic_reviews(
+    product_id=product_id,
+    count=3,    # Number of reviews to retrieve (default: 3)
+    start=0     # Starting index for pagination (default: 0)
+)
+print(reviews)
 ```
 
 ### New Feature: Get Product by Slug (IPv4 Endpoint)
