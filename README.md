@@ -16,6 +16,7 @@ This is a customized fork of the original `epicstore_api` library with additiona
 - Added `get_product_offer_by_id()` method to retrieve offer details by product ID and offer ID
 - Added `get_product_ipv4()` method to retrieve product details using IPv4 endpoint
 - Added `get_catalog_offer()` method to retrieve catalog offer details with flexible sha256Hash support
+- Added `get_video_by_id()` method to retrieve video information and mediaRefId by video ID
 - Implemented support for persisted GraphQL queries with hash caching mechanism
 - Added configurable hash endpoint for fetching GraphQL operation hashes
 - Enhanced performance with caching for sha256Hash values
@@ -91,7 +92,7 @@ print(config)
 from epicstore_api import EpicGamesStoreAPI
 
 # Initialize API
-api = EpicGamesStoreAPI(locale="zh-CN", country="TW")
+api = EpicGamesStoreAPI(locale="zh-Hant", country="TW")
 
 # Get product details by product ID
 product_id = "3ac65ef5cdf44b8084fcac818002635f"  # Example product ID
@@ -105,7 +106,7 @@ print(product)
 from epicstore_api import EpicGamesStoreAPI
 
 # Initialize API
-api = EpicGamesStoreAPI(locale="zh-CN", country="TW")
+api = EpicGamesStoreAPI(locale="zh-Hant", country="TW")
 
 # Get offer details by product ID and offer ID
 product_id = "3ac65ef5cdf44b8084fcac818002635f"  # Example product ID
@@ -120,7 +121,7 @@ print(offer)
 from epicstore_api import EpicGamesStoreAPI
 
 # Initialize API
-api = EpicGamesStoreAPI(locale="zh-CN")
+api = EpicGamesStoreAPI(locale="zh-Hant")
 
 # Get product details using IPv4 endpoint
 slug = "fall-guys"  # Product slug
@@ -138,7 +139,7 @@ For long description (长描述) content, please use other methods.
 from epicstore_api import EpicGamesStoreAPI
 
 # Initialize API
-api = EpicGamesStoreAPI(locale="zh-CN", country="TW")
+api = EpicGamesStoreAPI(locale="zh-Hant", country="TW")
 
 # Get catalog offer details
 # Option 1: Provide sha256Hash explicitly (recommended)
@@ -158,6 +159,44 @@ print(offer)
 ```
 
 The `sha256_hash` parameter allows you to provide the hash at call time, avoiding hardcoding it in the package. If not provided, the method will try to get it from cache or configured hash_endpoint. If hash_endpoint is not configured, you must provide the sha256_hash parameter explicitly.
+
+### New Feature: Get Video by ID
+
+Get video information by video ID and retrieve the mediaRefId. The video_id can be extracted from `fetch_store_games` response.
+
+**Note:** The video_id comes from `fetch_store_games` response, where video URLs are in the format:
+```
+{
+  "type": "heroCarouselVideo",
+  "url": "com.epicgames.video://6e8b6bc1-825e-4d09-acb2-a4c4e99a6856?cover=..."
+}
+```
+
+The video_id is the part between `com.epicgames.video://` and `?`.
+
+```python
+from epicstore_api import EpicGamesStoreAPI
+import re
+
+# Initialize API
+api = EpicGamesStoreAPI(locale="zh-Hant")
+
+# Extract video_id from fetch_store_games response
+video_url = "com.epicgames.video://6e8b6bc1-825e-4d09-acb2-a4c4e99a6856?cover=..."
+match = re.search(r'com\.epicgames\.video://([^?]+)', video_url)
+video_id = match.group(1) if match else None
+
+# Get video information
+# Option 1: Provide sha256Hash explicitly
+sha256_hash = "52dbe3764aa1012313360dbbfaf2b550975edd7f30c2427ad00495c269646003"
+video = api.get_video_by_id(video_id, sha256_hash=sha256_hash)
+# Access mediaRefIds: video['data']['Video']['fetchVideoByLocale']
+# Each item in the list contains 'recipe' and 'mediaRefId'
+
+# Option 2: Let the method get hash from cache/endpoint (if configured)
+video = api.get_video_by_id(video_id)
+print(video)
+```
 
 You can find more examples in the examples directory.
 

@@ -745,6 +745,56 @@ class EpicGamesStoreAPI:
             sha256_hash=sha256_hash,
         )
 
+    def get_video_by_id(
+        self,
+        video_id: str,
+        sha256_hash: str | None = None,
+    ) -> dict:
+        """Get video information by video ID and retrieve the mediaRefId.
+        
+        This method uses the persisted GraphQL query format with the
+        'getVideoById' operation. The video_id can be extracted from
+        fetch_store_games response, where video URLs are in the format:
+        "com.epicgames.video://{video_id}?cover=..."
+        
+        The video_id is the part after "com.epicgames.video://" and before "?".
+        
+        :param video_id: The video ID (e.g., "6e8b6bc1-825e-4d09-acb2-a4c4e99a6856")
+                        Can be extracted from fetch_store_games response:
+                        {
+                          "type": "heroCarouselVideo",
+                          "url": "com.epicgames.video://6e8b6bc1-825e-4d09-acb2-a4c4e99a6856?cover=..."
+                        }
+                        The video_id is the part between "com.epicgames.video://" and "?"
+        :param sha256_hash: Optional sha256Hash value for the persisted query.
+                           If None, will try to get it from cache/endpoint.
+                           If hash_endpoint is not configured, this parameter is required.
+        :return: Video data dictionary containing mediaRefId and other video information
+        :raises: EGSException if sha256_hash is not provided and hash_endpoint is not configured
+        
+        Example:
+            api = EpicGamesStoreAPI(locale="zh-Hant")
+            video = api.get_video_by_id(
+                video_id="6e8b6bc1-825e-4d09-acb2-a4c4e99a6856",
+                sha256_hash="52dbe3764aa1012313360dbbfaf2b550975edd7f30c2427ad00495c269646003"
+            )
+            # Access mediaRefIds: video['data']['Video']['fetchVideoByLocale']
+            # Each item contains 'recipe' and 'mediaRefId'
+        """
+        variables = {
+            'videoId': video_id,
+        }
+        
+        # If hash not provided, try to get from cache/endpoint
+        if sha256_hash is None:
+            sha256_hash = self._get_sha256_hash('getVideoById')
+        
+        return self._make_persisted_graphql_query(
+            operation_name='getVideoById',
+            variables=variables,
+            sha256_hash=sha256_hash,
+        )
+
     @staticmethod
     def _get_errors(resp) -> None:
         r = []
