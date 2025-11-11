@@ -18,6 +18,7 @@ This is a customized fork of the original `epicstore_api` library with additiona
 - Added `get_product_ipv4()` method to retrieve product details using IPv4 endpoint
 - Added `get_catalog_offer()` method to retrieve catalog offer details with flexible sha256Hash support
 - Added `get_video_by_id()` method to retrieve video information and mediaRefId by video ID
+- Added `search_store_query()` method to search store products using persisted GraphQL query
 - Implemented support for persisted GraphQL queries with hash caching mechanism
 - Added configurable hash endpoint for fetching GraphQL operation hashes
 - Enhanced performance with caching for sha256Hash values
@@ -218,6 +219,44 @@ video = api.get_video_by_id(video_id, sha256_hash=sha256_hash)
 video = api.get_video_by_id(video_id)
 print(video)
 ```
+
+### New Feature: Search Store Query
+
+Search store products using the searchStoreQuery persisted GraphQL query. This method provides flexible filtering and sorting options.
+
+```python
+from epicstore_api import EpicGamesStoreAPI
+
+# Initialize API
+api = EpicGamesStoreAPI(locale="zh-Hant", country="TW")
+
+# Search store products
+# Option 1: Provide sha256Hash explicitly
+sha256_hash = "7d58e12d9dd8cb14c84a3ff18d360bf9f0caa96bf218f2c5fda68ba88d68a437"
+results = api.search_store_query(
+    category="games/edition/base|bundles/games|games/edition|editors|addons|games/demo|software/edition/base|games/experience|subscription",
+    count=40,
+    start=0,
+    sort_by="releaseDate",
+    sort_dir="DESC",
+    keywords="",
+    tag="",
+    allow_countries="TW",
+    coming_soon=False,
+    with_price=True,
+    sha256_hash=sha256_hash,
+)
+
+# Option 2: Use simplified parameters (with defaults)
+results = api.search_store_query(
+    count=20,
+    start=0,
+    sha256_hash=sha256_hash,
+)
+print(results)
+```
+
+The `sha256_hash` parameter allows you to provide the hash at call time. If not provided, the method will try to get it from cache or configured hash_endpoint. If hash_endpoint is not configured, you must provide the sha256_hash parameter explicitly.
 
 You can find more examples in the examples directory.
 

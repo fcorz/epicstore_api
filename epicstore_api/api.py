@@ -739,6 +739,89 @@ class EpicGamesStoreAPI:
             sha256_hash=sha256_hash,
         )
 
+    def search_store_query(
+        self,
+        category: str | None = None,
+        count: int = 40,
+        start: int = 0,
+        sort_by: str = 'relevancy,viewableDate',
+        sort_dir: str = 'DESC,DESC',
+        keywords: str = '',
+        tag: str = '',
+        allow_countries: str | None = None,
+        with_price: bool = True,
+        sha256_hash: str | None = None,
+    ) -> dict:
+        """Search store products using searchStoreQuery persisted query.
+        
+        This method uses the persisted GraphQL query format with the
+        'searchStoreQuery' operation. It provides a flexible way to search
+        and filter products in the Epic Games Store.
+        
+        By default, this method retrieves all product categories. The sha256Hash
+        must be provided explicitly or via hash_endpoint configuration.
+        
+        :param category: Product category filter. Default includes all categories:
+                        "games/edition/base|bundles/games|games/edition|editors|addons|games/demo|software/edition/base|games/experience|subscription"
+        :param count: Number of products to retrieve. Default is 40.
+        :param start: Starting index for pagination. Default is 0.
+        :param sort_by: Sort parameter(s). Can be a single value or comma-separated values.
+                       Examples: 'releaseDate', 'relevancy,viewableDate'. Default is 'relevancy,viewableDate'.
+        :param sort_dir: Sort direction(s). Can be a single value or comma-separated values.
+                        Must be 'ASC' or 'DESC' (or comma-separated like 'DESC,DESC').
+                        Default is 'DESC,DESC'.
+        :param keywords: Search keywords. Default is empty string.
+        :param tag: Tag filter. Default is empty string.
+        :param allow_countries: Allowed countries filter. If None, uses instance country.
+        :param with_price: Include price information. Default is True.
+        :param sha256_hash: sha256Hash value for the persisted query. Must be provided
+                           explicitly or via hash_endpoint configuration. If None and
+                           hash_endpoint is not configured, will raise EGSException.
+        :return: Search results dictionary containing products matching the criteria
+        :raises: EGSException if sha256_hash is not provided and hash_endpoint is not configured
+        
+        Example:
+            api = EpicGamesStoreAPI(locale="zh-Hant", country="TW")
+            results = api.search_store_query(
+                count=40,
+                start=0,
+                sha256_hash="7d58e12d9dd8cb14c84a3ff18d360bf9f0caa96bf218f2c5fda68ba88d68a437"
+            )
+        """
+        # Set default category if not provided (all categories)
+        if category is None:
+            category = (
+                "games/edition/base|bundles/games|games/edition|editors|"
+                "addons|games/demo|software/edition/base|games/experience|subscription"
+            )
+        
+        # Use instance country if allow_countries not provided
+        if allow_countries is None:
+            allow_countries = self.country
+        
+        variables = {
+            'allowCountries': allow_countries,
+            'category': category,
+            'count': count,
+            'keywords': keywords,
+            'sortBy': sort_by,
+            'sortDir': sort_dir,
+            'start': start,
+            'tag': tag,
+            'withPrice': with_price,
+        }
+        
+        # sha256Hash must be provided explicitly or via hash_endpoint
+        # If not provided, try to get from cache/endpoint, otherwise raise exception
+        if sha256_hash is None:
+            sha256_hash = self._get_sha256_hash('searchStoreQuery')
+        
+        return self._make_persisted_graphql_query(
+            operation_name='searchStoreQuery',
+            variables=variables,
+            sha256_hash=sha256_hash,
+        )
+
     def get_catalog_offer(
         self,
         offer_id: str,
